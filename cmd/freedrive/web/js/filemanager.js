@@ -166,6 +166,7 @@ const FileManager = (() => {
 
         const searchInput = document.getElementById('search-input');
         searchInput?.addEventListener('keydown', (e) => {
+            if (Components.isComposing(e)) return;
             if (e.key === 'Enter') {
                 const q = searchInput.value.trim();
                 if (q) searchAllResults(q);
@@ -253,7 +254,7 @@ const FileManager = (() => {
         });
 
         document.getElementById('share-people-input')?.addEventListener('keydown', (e) => {
-            if (e.key !== 'Enter') return;
+            if (e.key !== 'Enter' || Components.isComposing(e)) return;
             e.preventDefault();
             const value = e.currentTarget.value.trim();
             if (!value) return;
@@ -4436,7 +4437,7 @@ const FileManager = (() => {
             overlay.remove();
         };
         const onKeyDown = (event) => {
-            if (event.key === 'Escape') close();
+            if (event.key === 'Escape' && !Components.isComposing(event)) close();
         };
 
         overlay.addEventListener('click', (event) => {
@@ -5064,7 +5065,7 @@ const FileManager = (() => {
     }
 
     function editorGlobalShortcuts(e) {
-        if (!editorState) return;
+        if (!editorState || Components.isComposing(e)) return;
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
             e.preventDefault();
             document.getElementById('editor-save')?.click();
@@ -6843,6 +6844,7 @@ const FileManager = (() => {
     let _gKeyTimer = null;
 
     function handleShortcut(e) {
+        if (Components.isComposing(e)) return;
         const target = e.target;
         const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
 

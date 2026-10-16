@@ -74,7 +74,7 @@ const Components = (() => {
                 i.focus();
                 i.select();
                 i.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === 'Enter' && !isComposing(e)) {
                         e.preventDefault();
                         resolve(i.value);
                         hideModal();
@@ -199,9 +199,15 @@ const Components = (() => {
         if (!ok) throw new Error('Copy failed');
     }
 
+    // True while an IME (Chinese, Japanese, Korean input) is composing text: Enter
+    // picks a candidate and Escape cancels it, so neither should trigger app actions.
+    function isComposing(e) {
+        return Boolean(e?.isComposing) || e?.keyCode === 229;
+    }
+
     function closeOnEscape() {
         document.addEventListener('keydown', (e) => {
-            if (e.key !== 'Escape') return;
+            if (e.key !== 'Escape' || isComposing(e)) return;
             hideModal();
             document.getElementById('context-menu')?.classList.add('hidden');
             document.getElementById('share-modal-overlay')?.classList.add('hidden');
@@ -221,6 +227,7 @@ const Components = (() => {
     }
 
     return {
+        isComposing,
         init,
         toast,
         showModal,

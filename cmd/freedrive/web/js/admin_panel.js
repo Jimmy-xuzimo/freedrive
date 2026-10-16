@@ -2989,7 +2989,7 @@ const AdminPanel = (() => {
         const typeInput = document.getElementById('new-type-chip');
         if (typeInput) {
             typeInput.addEventListener('keydown', (e) => {
-                if (e.key !== 'Enter') return;
+                if (e.key !== 'Enter' || Components.isComposing(e)) return;
                 if (state.settingsDraft.general.allowed_types_unlimited) return;
                 e.preventDefault();
                 const value = String(typeInput.value || '').replace(/^\./, '').trim().toLowerCase();

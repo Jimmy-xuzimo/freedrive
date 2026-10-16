@@ -287,3 +287,12 @@ test('ZIP downloads mark entry names as UTF-8 so Chinese names extract intact', 
     assert.equal(view.getUint16(central + 8, true) & 0x0800, 0x0800);
     assert.equal(view.getUint32(central + 38, true) >>> 16, 0o100644);
 });
+
+test('IME composition keys are recognised so Enter and Escape do not act mid-composition', async () => {
+    const { context } = await environment();
+    const components = vm.runInContext('Components', context);
+    assert.equal(components.isComposing({ key: 'Enter', isComposing: true }), true);
+    assert.equal(components.isComposing({ key: 'Process', keyCode: 229 }), true);
+    assert.equal(components.isComposing({ key: 'Enter', keyCode: 13 }), false);
+    assert.equal(components.isComposing(undefined), false);
+});
