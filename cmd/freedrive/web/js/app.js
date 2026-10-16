@@ -860,6 +860,18 @@ const App = (() => {
         handleRoute();
     }
 
+    // Reads the download name from Content-Disposition, preferring the RFC 5987
+    // filename* form that the server uses for non-ASCII (e.g. Chinese) names.
+    function dispositionFilename(disposition) {
+        const encoded = /filename\*\s*=\s*([^']*)'[^']*'([^;]+)/i.exec(disposition);
+        if (encoded) {
+            try { return decodeURIComponent(encoded[2].trim()); } catch { /* fall back to filename= */ }
+        }
+        const plain = /filename\s*=\s*(?:"((?:\\.|[^"\\])*)"|([^;]+))/i.exec(disposition);
+        if (!plain) return '';
+        return plain[1] != null ? plain[1].replace(/\\(.)/g, '$1') : plain[2].trim();
+    }
+
     function showPublicShareDownload() {
         document.getElementById('auth-screen')?.classList.add('hidden');
         document.getElementById('app')?.classList.add('hidden');
@@ -911,8 +923,7 @@ const App = (() => {
                     await response.arrayBuffer(), key, CryptoModule.base64ToUint8(iv),
                 );
                 const disposition = response.headers.get('Content-Disposition') || '';
-                const match = disposition.match(/filename="([^"]+)"/i);
-                const fileName = (match?.[1] || 'freedrive-download').replace(/[\\/\r\n]/g, '_');
+                const fileName = (dispositionFilename(disposition) || 'freedrive-download').replace(/[\\/\r\n]/g, '_');
                 const blob = new Blob([plaintext], {
                     type: response.headers.get('X-File-Mime') || 'application/octet-stream',
                 });

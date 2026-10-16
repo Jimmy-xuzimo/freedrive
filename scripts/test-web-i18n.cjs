@@ -249,3 +249,14 @@ test('notifications are translated when rendered and keep English text for icon 
         assert.equal(notificationText({ text: 'Legacy text' }), 'Legacy text');
     }
 });
+
+test('public share downloads keep Chinese and quoted file names', () => {
+    const source = fs.readFileSync(path.join(web, 'js/app.js'), 'utf8');
+    const fn = /    function dispositionFilename\(disposition\) \{[\s\S]*?\n    \}\n/.exec(source)[0];
+    const dispositionFilename = vm.runInNewContext(`(${fn.trim()})`);
+    assert.equal(dispositionFilename("attachment; filename*=utf-8''%E5%AD%A3%E5%BA%A6%20%E6%8A%A5%E5%91%8A.txt"), '季度 报告.txt');
+    assert.equal(dispositionFilename('attachment; filename=report.pdf'), 'report.pdf');
+    assert.equal(dispositionFilename('attachment; filename="say \\"hi\\".txt"'), 'say "hi".txt');
+    assert.equal(dispositionFilename("attachment; filename*=utf-8''%E0%A4%A"), '');
+    assert.equal(dispositionFilename(''), '');
+});
