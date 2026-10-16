@@ -205,6 +205,28 @@ const Components = (() => {
         return Boolean(e?.isComposing) || e?.keyCode === 229;
     }
 
+    // Decodes a text file: UTF-8 (BOM optional), UTF-16 with a BOM and, on Chinese sites,
+    // GB18030/GBK, which Excel and Notepad use for Chinese CSV and TXT files on Windows.
+    async function decodeText(blob) {
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        if (bytes[0] === 0xff && bytes[1] === 0xfe) return new TextDecoder('utf-16le').decode(bytes);
+        if (bytes[0] === 0xfe && bytes[1] === 0xff) return new TextDecoder('utf-16be').decode(bytes);
+        try {
+            return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+        } catch {
+            if (I18n.language === 'zh-CN') {
+                try { return new TextDecoder('gb18030', { fatal: true }).decode(bytes); } catch { /* not GBK either */ }
+            }
+            return new TextDecoder('utf-8').decode(bytes);
+        }
+    }
+
+    // Excel reads BOM-less CSV in the system code page, so non-ASCII CSV gets a UTF-8 BOM.
+    function csvForExcel(text) {
+        const value = String(text ?? '');
+        return /[^\x00-\x7f]/.test(value) && !value.startsWith('\ufeff') ? `\ufeff${value}` : value;
+    }
+
     function closeOnEscape() {
         document.addEventListener('keydown', (e) => {
             if (e.key !== 'Escape' || isComposing(e)) return;
@@ -228,6 +250,8 @@ const Components = (() => {
 
     return {
         isComposing,
+        decodeText,
+        csvForExcel,
         init,
         toast,
         showModal,

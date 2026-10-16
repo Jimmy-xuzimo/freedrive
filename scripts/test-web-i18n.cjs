@@ -10,7 +10,7 @@ async function environment(siteLanguage = 'zh-CN') {
     const storage = new Map([['fd_language', 'zh-CN']]);
     const fields = new Map();
     const context = vm.createContext({
-        Intl, Date, AbortSignal, URLSearchParams, console,
+        Intl, Date, AbortSignal, URLSearchParams, TextDecoder, console,
         localStorage: { getItem: key => storage.get(key) || null, setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) },
         navigator: { languages: ['zh-CN', 'en'] },
         document: { documentElement: {}, querySelectorAll: () => [], getElementById: key => fields.get(key) },
@@ -307,4 +307,19 @@ test('word count treats each Chinese character as a word and keeps English count
     assert.equal(countWords('你好世界，欢迎使用 FreeDrive。'), 9);
     assert.equal(countWords('季度报告2026'), 5);
     assert.equal(countWords('「重要」：请查看'), 5);
+});
+
+test('text files decode as UTF-8, UTF-16 or (on Chinese sites) GBK, and Chinese CSV gets a BOM for Excel', async () => {
+    const gbk = new Uint8Array([188, 190, 182, 200, 44, 177, 168, 184, 230, 10, 49, 44, 182, 254]); // "季度,报告\n1,二" in GBK
+    const zh = (await environment()).context;
+    const components = vm.runInContext('Components', zh);
+    assert.equal(await components.decodeText(new Blob([gbk])), '季度,报告\n1,二');
+    assert.equal(await components.decodeText(new Blob(['﻿季度,报告'])), '季度,报告');
+    assert.equal(await components.decodeText(new Blob([new Uint8Array([0xff, 0xfe, 0x63, 0x5b, 0xa6, 0x5e])])), '季度');
+    assert.equal(await components.decodeText(new Blob(['plain ascii'])), 'plain ascii');
+    const en = vm.runInContext('Components', (await environment('en')).context);
+    assert.equal(await en.decodeText(new Blob([gbk])), new TextDecoder().decode(gbk), 'English sites keep the previous UTF-8 decoding');
+    assert.equal(components.csvForExcel('a,b\n1,2'), 'a,b\n1,2');
+    assert.equal(components.csvForExcel('名称,大小'), '﻿名称,大小');
+    assert.equal(components.csvForExcel('﻿名称'), '﻿名称');
 });

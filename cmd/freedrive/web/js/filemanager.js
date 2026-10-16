@@ -5589,7 +5589,7 @@ const FileManager = (() => {
     async function openTextEditor(file) {
         Components.toast(I18n.t("Loading file..."), 'info');
         const blob = await decryptFileBlob(file);
-        const text = await blob.text();
+        const text = await Components.decodeText(blob);
         const shell = openEditorShell(file);
 
         const ext = getFileExtension(file.name);
@@ -6322,7 +6322,7 @@ const FileManager = (() => {
                     throw new Error('No worksheet found in this file');
                 }
             } else {
-                const csv = await blob.text();
+                const csv = (await Components.decodeText(blob)).replace(/^\ufeff/, '');
                 csvRows = csv.split(/\r?\n/).filter((r) => r.length > 0).map((r) => r.split(','));
                 if (!csvRows.length) csvRows = [['']];
                 sheetNames = [I18n.t("Sheet1")];
@@ -6513,7 +6513,7 @@ const FileManager = (() => {
         document.getElementById('sheet-export')?.addEventListener('click', () => {
             const data = collectSheetData();
             const out = data.map((r) => r.join(',')).join('\n');
-            const outBlob = new Blob([out], { type: 'text/csv' });
+            const outBlob = new Blob([Components.csvForExcel(out)], { type: 'text/csv' });
             const url = URL.createObjectURL(outBlob);
             const a = document.createElement('a');
             a.href = url;
@@ -6598,7 +6598,7 @@ const FileManager = (() => {
                 });
                 const data = csvRows;
                 const out = data.map((r) => r.join(',')).join('\n');
-                saveBlob = new Blob([out], { type: 'text/csv' });
+                saveBlob = new Blob([Components.csvForExcel(out)], { type: 'text/csv' });
                 mimeType = 'text/csv';
             }
 
@@ -6663,7 +6663,7 @@ const FileManager = (() => {
 
         try {
             const blob = await decryptFileBlob(file);
-            originalText = await blob.text();
+            originalText = await Components.decodeText(blob);
             editor.value = originalText;
         } catch (err) {
             Components.toast(I18n.t("Failed to load JSON: {0}", { 0: I18n.error(err.message) }), 'error');

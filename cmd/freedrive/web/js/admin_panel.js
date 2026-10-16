@@ -2560,7 +2560,7 @@ const AdminPanel = (() => {
                     const csv = ['timestamp,user,action,target,ip,device,status']
                         .concat(rows.map((r) => [r.created_at, r.username, r.action, r.target_name, r.ip, r.device, r.status].map((x) => `"${String(x || '').replace(/"/g, '""')}"`).join(',')))
                         .join('\n');
-                    downloadTextFile(csv, `activity-${Date.now()}.csv`, 'text/csv');
+                    downloadTextFile(Components.csvForExcel(csv), `activity-${Date.now()}.csv`, 'text/csv');
                     return;
                 }
 
