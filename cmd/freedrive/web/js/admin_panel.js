@@ -709,7 +709,7 @@ const AdminPanel = (() => {
                                 <div class="gd-activity-item">
                                     <span class="gd-avatar" style="width:32px; height:32px; font-size:12px; background-color: hsl(${((a.username || '').length * 137) % 360}, 60%, 50%)">${esc(initials(a.username || 'U'))}</span>
                                     <div class="gd-activity-info">
-                                        <div class="gd-activity-text"><strong>${esc(a.username || I18n.t("User"))}</strong> ${esc(I18n.label(String(a.action || 'did').toLowerCase()))} <strong>${esc(a.target_name || 'item')}</strong></div>
+                                        <div class="gd-activity-text"><strong>${esc(a.username || I18n.t("User"))}</strong> ${esc(I18n.label(String(a.action || 'did').toLowerCase()))} <strong>${esc(a.target_name || I18n.t("item"))}</strong></div>
                                         <span class="gd-activity-time">${Components.formatDate(a.created_at)}</span>
                                     </div>
                                 </div>
@@ -969,7 +969,7 @@ const AdminPanel = (() => {
                                     <span class="gd-activity-action">${esc(I18n.label(a.action))}</span>
                                     <span class="gd-activity-time">${Components.formatDate(a.created_at)}</span>
                                 </div>
-                                <span class="gd-activity-target" title="${esc(a.target_name)}">${esc(a.target_name || 'item')}</span>
+                                <span class="gd-activity-target" title="${esc(a.target_name)}">${esc(a.target_name || I18n.t("item"))}</span>
                             </div>
                         `).join('') || `<div class="gd-empty-text">${I18n.t("No recent activity")}</div>`}
                     </div>
@@ -1300,7 +1300,7 @@ const AdminPanel = (() => {
                                             <td class="activity-time-cell">${Components.formatAbsoluteDate(a.created_at)}</td>
                                             <td>${esc(a.username || I18n.t("User"))}</td>
                                             <td><span class="activity-action-badge ${badgeCls}">${esc(I18n.label(a.action || 'action'))}</span></td>
-                                            <td class="activity-target-cell" title="${esc(a.target_name || 'item')}">${esc(a.target_name || 'item')}</td>
+                                            <td class="activity-target-cell" title="${esc(a.target_name || I18n.t("item"))}">${esc(a.target_name || I18n.t("item"))}</td>
                                             <td class="activity-time-cell">${esc(a.ip)}</td>
                                             <td>${esc(a.device)}</td>
                                             <td>

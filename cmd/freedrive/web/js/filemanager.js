@@ -2201,8 +2201,11 @@ const FileManager = (() => {
         const me = getCurrentUser();
         const edited = item.updated_at && item.created_at
             && new Date(item.updated_at).getTime() > new Date(item.created_at).getTime();
-        const who = (item.owner_id && me.id && item.owner_id === me.id) ? I18n.t("You") : (itemOwner(item) || I18n.t("You"));
-        const reason = `${who} ${I18n.t(edited ? 'edited' : 'created')} \u00b7 ${Components.formatDate(item.updated_at || item.created_at)}`;
+        const owner = (item.owner_id && me.id && item.owner_id === me.id) ? '' : itemOwner(item);
+        const when = Components.formatDate(item.updated_at || item.created_at);
+        const reason = owner
+            ? I18n.t(edited ? '{1} edited \u00b7 {0}' : '{1} created \u00b7 {0}', { 0: when, 1: owner })
+            : I18n.t(edited ? 'You edited \u00b7 {0}' : 'You created \u00b7 {0}', { 0: when });
         const fileSharedBadge = showSharedBadgeForItem(item) ? renderSharedBadge() : '';
 
         card.innerHTML = `
@@ -4144,7 +4147,7 @@ const FileManager = (() => {
                         textHtml = `<div class="activity-text">${esc(a.target_name)}</div>`;
                     } else {
                         const action = formatAction(a.action);
-                        textHtml = `<div class="activity-text"><strong>${esc(actor)}</strong> ${esc(action)} <strong>${esc(a.target_name || 'item')}</strong></div>`;
+                        textHtml = `<div class="activity-text"><strong>${esc(actor)}</strong> ${esc(action)} <strong>${esc(a.target_name || I18n.t("item"))}</strong></div>`;
                     }
 
                     return `
