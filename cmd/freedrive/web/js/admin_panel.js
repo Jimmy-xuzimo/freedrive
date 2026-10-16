@@ -1505,7 +1505,7 @@ const AdminPanel = (() => {
                 <div class="admin-form-group">
                     <label>${I18n.t("Default language")}</label>
                     <select class="admin-input" data-setting="general.language">
-                        ${['en', 'zh-CN', 'az', 'tr', 'de'].map((x) => `<option value="${x}" ${(g.language || 'en') === x ? 'selected' : ''}>${I18n.languages[x] || x.toUpperCase()}</option>`).join('')}
+                        ${['en', 'zh-CN', 'az', 'tr', 'de'].map((x) => `<option value="${x}" ${(I18n.normalize(g.language) || g.language || 'en') === x ? 'selected' : ''}>${I18n.languages[x] || x.toUpperCase()}</option>`).join('')}
                     </select>
                 </div>
                 <div class="admin-form-group">
@@ -2475,7 +2475,7 @@ const AdminPanel = (() => {
                     return;
                 }
                 if (action === 'cleanup-duplicates') {
-                    const ok = await Components.confirm(I18n.t("Remove duplicate files"), 'In each duplicate group the newest copy is kept; older copies are permanently deleted.', I18n.t("Remove"));
+                    const ok = await Components.confirm(I18n.t("Remove duplicate files"), I18n.t("In each duplicate group the newest copy is kept; older copies are permanently deleted."), I18n.t("Remove"));
                     if (!ok) return;
                     try {
                         const res = await API.admin.purgeDuplicates();
@@ -2603,7 +2603,7 @@ const AdminPanel = (() => {
                     const list = state.settingsDraft.security.blocklist || [];
                     if (blocked) {
                         if (!list.some((x) => x.ip === ip)) {
-                            state.settingsDraft.security.blocklist.push({ ip, by: getCurrentUser().username || 'admin', at: nowISO(), note: I18n.t("Blocked from security panel") });
+                            state.settingsDraft.security.blocklist.push({ ip, by: getCurrentUser().username || 'admin', at: nowISO(), note: 'Blocked from security panel' });
                         }
                     } else {
                         state.settingsDraft.security.blocklist = list.filter((x) => x.ip !== ip);
@@ -2840,6 +2840,10 @@ const AdminPanel = (() => {
                         if (data) {
                             applyServerSettings(data);
                         }
+                        if (I18n.resolve(state.settings.general?.language) !== I18n.language) {
+                            window.location.reload();
+                            return;
+                        }
                         Components.toast(I18n.t("Settings restored from backup"), 'success');
                         renderSection();
                     } catch (err) {
@@ -2883,7 +2887,7 @@ const AdminPanel = (() => {
                     }
                     try {
                         await persistSettingsNow();
-                        if (I18n.resolve(state.settings.general.language) !== I18n.language) {
+                        if (I18n.resolve(state.settings.general?.language) !== I18n.language) {
                             window.location.reload();
                             return;
                         }

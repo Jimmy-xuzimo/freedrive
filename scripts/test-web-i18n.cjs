@@ -111,18 +111,27 @@ test('local activity preserves historical actors, filenames and legacy records i
 
 test('bootstrap loads the original application scripts after language resolution and initializes once', async () => {
     const events = [];
+    const listeners = [];
     let finishLanguage;
     const languageReady = new Promise(resolve => { finishLanguage = resolve; });
     const context = vm.createContext({
         I18n: { init: async () => { await languageReady; events.push('language'); }, t: value => value },
         App: { init: () => events.push('app') }, console,
         document: {
+            addEventListener: (type, listener, capture) => listeners.push({ type, listener, capture }),
             createElement: () => ({}),
             body: { appendChild: script => { events.push(script.src); queueMicrotask(() => script.onload()); } },
         },
     });
     const completed = vm.runInContext(fs.readFileSync(path.join(web, 'js/bootstrap.js'), 'utf8'), context);
     assert.deepEqual(events, []);
+    // Native form submission is blocked before the application handlers attach.
+    assert.equal(listeners.length, 1);
+    assert.equal(listeners[0].type, 'submit');
+    assert.equal(listeners[0].capture, true);
+    let prevented = false;
+    listeners[0].listener({ preventDefault: () => { prevented = true; } });
+    assert.equal(prevented, true);
     finishLanguage();
     await completed;
     assert.deepEqual(events, ['language', ...['crypto', 'crypto_sync', 'api', 'components', 'auth', 'upload', 'filemanager', 'sidebar-tree', 'admin_panel', 'app'].map(name => `/js/${name}.js`), 'app']);
