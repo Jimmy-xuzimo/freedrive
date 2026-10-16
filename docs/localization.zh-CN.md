@@ -12,9 +12,9 @@
 
 ## 实现方式
 
-- `cmd/freedrive/web/locales/zh-CN.js`：简体中文词条，以英文原文为键。
+- `cmd/freedrive/web/locales/zh-CN.js`：简体中文词条，以英文原文为键。仅在站点语言为中文时按需加载，英文站点不下载该文件。
 - `cmd/freedrive/web/js/i18n.js`：语言解析、词条查找、参数插值、日期与相对时间、错误消息与状态标签。
-- `cmd/freedrive/web/js/bootstrap.js`：先确定语言，再加载界面脚本，避免初始状态和菜单标签混用两种语言。
+- `cmd/freedrive/web/js/bootstrap.js`：先确定语言，再按顺序执行界面脚本，避免初始状态和菜单标签混用两种语言。脚本在请求语言配置期间即并行预加载，不会拖慢启动；所有表单均由脚本处理，因此始终阻止原生表单提交，避免脚本就绪前按回车把字段写入 URL。
 - 静态 HTML 通过 `data-i18n` 及 `data-i18n-title`、`data-i18n-placeholder`、`data-i18n-aria-label` 标注；动态内容在生成处显式调用 `I18n.t()`。
 - `GET /api/v1/public/config` 只返回站点语言，不公开其他管理设置。
 

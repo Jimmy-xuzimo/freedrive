@@ -120,11 +120,15 @@ test('bootstrap loads the original application scripts after language resolution
         document: {
             addEventListener: (type, listener, capture) => listeners.push({ type, listener, capture }),
             createElement: () => ({}),
+            head: { appendChild: link => events.push(`preload ${link.href}`) },
             body: { appendChild: script => { events.push(script.src); queueMicrotask(() => script.onload()); } },
         },
     });
     const completed = vm.runInContext(fs.readFileSync(path.join(web, 'js/bootstrap.js'), 'utf8'), context);
-    assert.deepEqual(events, []);
+    const scripts = ['crypto', 'crypto_sync', 'api', 'components', 'auth', 'upload', 'filemanager', 'sidebar-tree', 'admin_panel', 'app'];
+    // Downloads start before language resolution; nothing executes yet.
+    assert.deepEqual(events, scripts.map(name => `preload /js/${name}.js`));
+    events.length = 0;
     // Native form submission is blocked before the application handlers attach.
     assert.equal(listeners.length, 1);
     assert.equal(listeners[0].type, 'submit');
@@ -134,7 +138,33 @@ test('bootstrap loads the original application scripts after language resolution
     assert.equal(prevented, true);
     finishLanguage();
     await completed;
-    assert.deepEqual(events, ['language', ...['crypto', 'crypto_sync', 'api', 'components', 'auth', 'upload', 'filemanager', 'sidebar-tree', 'admin_panel', 'app'].map(name => `/js/${name}.js`), 'app']);
+    assert.deepEqual(events, ['language', ...scripts.map(name => `/js/${name}.js`), 'app']);
+});
+
+test('the Chinese catalog is downloaded only for Chinese sites and failures fall back to English', async () => {
+    for (const [siteLanguage, loadFails, expected, requested] of [['en', false, 'en', []], ['zh-CN', false, 'zh-CN', ['/locales/zh-CN.js']], ['zh-CN', true, 'en', ['/locales/zh-CN.js']]]) {
+        const requests = [];
+        const context = vm.createContext({
+            AbortSignal, Intl,
+            fetch: async () => ({ ok: true, json: async () => ({ language: siteLanguage }) }),
+            document: {
+                documentElement: {}, querySelectorAll: () => [],
+                createElement: () => ({}),
+                head: { appendChild: script => {
+                    requests.push(script.src);
+                    if (loadFails) return queueMicrotask(() => script.onerror(new Error('offline')));
+                    vm.runInContext(fs.readFileSync(path.join(web, 'locales/zh-CN.js'), 'utf8'), context);
+                    queueMicrotask(() => script.onload());
+                } },
+            },
+        });
+        vm.runInContext(fs.readFileSync(path.join(web, 'js/i18n.js'), 'utf8'), context);
+        const i18n = vm.runInContext('I18n', context);
+        await i18n.init();
+        assert.equal(i18n.language, expected);
+        assert.deepEqual(requests, requested);
+        assert.equal(i18n.t('Sign in'), expected === 'en' ? 'Sign in' : '登录');
+    }
 });
 
 test('Chinese search labels preserve the English API option values', async () => {

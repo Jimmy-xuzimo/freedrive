@@ -40,6 +40,19 @@ const I18n = (() => {
             if (response.ok) siteLanguage = (await response.json()).language;
         } catch { /* A missing endpoint or offline server must never block sign-in. */ }
         language = resolve(siteLanguage);
+        // Only non-English sites download a catalog; English uses the source phrases.
+        if (language !== 'en' && !globalThis.FD_LOCALES?.[language]) {
+            try {
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = `/locales/${language}.js`;
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+            } catch { /* Fall back to English rather than blocking sign-in. */ }
+            if (!globalThis.FD_LOCALES?.[language]) language = 'en';
+        }
         document.documentElement.lang = language;
         apply();
     }
