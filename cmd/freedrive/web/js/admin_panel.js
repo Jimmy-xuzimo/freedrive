@@ -180,7 +180,7 @@ const AdminPanel = (() => {
                 `<div class="gd-input-group"><label>${I18n.t("Storage quota")}</label><select id="quota-select" class="gd-input">${quotaOptionsHtml(currentGb)}</select></div>`,
                 [
                     { text: I18n.t("Cancel"), action: () => resolve(null) },
-                    { text: 'OK', class: 'btn-primary', action: () => resolve(asNumber(document.getElementById('quota-select')?.value, null)) },
+                    { text: I18n.t('OK'), class: 'btn-primary', action: () => resolve(asNumber(document.getElementById('quota-select')?.value, null)) },
                 ]
             );
         });
@@ -950,7 +950,7 @@ const AdminPanel = (() => {
                             <div class="gd-breakdown-row">
                                 <div class="gd-breakdown-left">
                                     <span class="gd-legend-dot" style="background-color: ${item.color}"></span>
-                                    <span>${label}</span>
+                                    <span>${esc(I18n.t(label))}</span>
                                 </div>
                                 <span class="gd-breakdown-size">${Components.formatSize(item.size)}</span>
                             </div>
@@ -1175,7 +1175,7 @@ const AdminPanel = (() => {
         return {
             ...item,
             ip: item.ip_address || item.ip || '',
-            device: item.device || I18n.t("Unknown device"),
+            device: item.device ? I18n.device(item.device) : I18n.t("Unknown device"),
             status: action.includes('failed') ? 'failed' : 'success',
             user_agent: item.user_agent || '',
             session_id: item.session_id || item.id || '',
@@ -1372,7 +1372,7 @@ const AdminPanel = (() => {
                     id: sessionKey,
                     user_id: a.user_id || '',
                     user: a.username || I18n.t("User"),
-                    device: a.device || I18n.t("Unknown device"),
+                    device: a.device ? I18n.device(a.device) : I18n.t("Unknown device"),
                     ip: a.ip || '',
                     location: a.location || I18n.t("Unknown"),
                     started: a.created_at,

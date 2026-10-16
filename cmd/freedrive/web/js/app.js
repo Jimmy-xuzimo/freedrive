@@ -246,7 +246,7 @@ const App = (() => {
 
         const pendingBanner = pendingStatus.pending
             ? `<div id="settings-email-pending" style="margin-top:12px;padding:12px 14px;border-radius:8px;background:#e8f0fe;color:#174ea6;font-size:13px;line-height:1.45;">
-                ${I18n.t("Check your inbox at")} <strong>${esc(pendingStatus.new_email_masked || I18n.t("your new address"))}</strong>.
+                ${I18n.t("Check your inbox at {0}.", { 0: `<strong>${esc(pendingStatus.new_email_masked || I18n.t("your new address"))}</strong>` })}
                 ${I18n.t('The confirmation link expires {0}.', { 0: esc(formatEmailExpiry(pendingStatus.expires_at)) })}
             </div>`
             : '';
@@ -597,7 +597,7 @@ const App = (() => {
                 panel.classList.remove('hidden');
                 panel.innerHTML = `
                     <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;">
-                        <img src="${esc(setup.qr)}" alt="Authenticator QR code" width="160" height="160" style="border:1px solid #e8eaed;border-radius:8px;">
+                        <img src="${esc(setup.qr)}" alt="${I18n.t("Authenticator QR code")}" width="160" height="160" style="border:1px solid #e8eaed;border-radius:8px;">
                         <div style="flex:1;min-width:180px;">
                             <p style="margin:0 0 8px;font-size:13px;color:#5f6368;line-height:1.45;">${I18n.t("Scan this QR code, or enter the secret manually:")}</p>
                             <code style="display:block;word-break:break-all;padding:8px 10px;background:#f1f3f4;border-radius:8px;font-size:12px;">${esc(setup.secret)}</code>
@@ -689,7 +689,7 @@ const App = (() => {
                         <div style="display:flex;align-items:flex-start;gap:12px;min-width:0;">
                             <div style="color:#5f6368;margin-top:2px;">${icon}</div>
                             <div style="min-width:0;">
-                                <div style="font-size:14px;font-weight:500;color:#202124;">${esc(s.device_name || I18n.t("Unknown device"))}${badge}</div>
+                                <div style="font-size:14px;font-weight:500;color:#202124;">${esc(s.device_name ? I18n.device(s.device_name) : I18n.t("Unknown device"))}${badge}</div>
                                 <div style="font-size:12px;color:#5f6368;margin-top:2px;">${I18n.t("{3} · Last active {4}", { 3: esc(s.ip_address || '—'), 4: esc(formatSessionTime(s.last_seen_at)) })}</div>
                             </div>
                         </div>

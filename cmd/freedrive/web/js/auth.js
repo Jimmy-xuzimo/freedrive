@@ -205,9 +205,10 @@ const Auth = (() => {
         document.getElementById('login-approval-token').value = challengeToken || '';
         const msg = document.getElementById('login-approval-message');
         if (msg) {
+            const confirmLabel = `<strong>${I18n.t("Yes, it's me")}</strong>`;
             msg.innerHTML = deviceName
-                ? `${I18n.t('Open FreeDrive on your phone and tap')} <strong>${I18n.t("Yes, it's me")}</strong> ${I18n.t("to approve sign-in to")} <strong>${Components.escapeHtml(deviceName)}</strong>.`
-                : `${I18n.t('Open FreeDrive on your phone and tap')} <strong>${I18n.t("Yes, it's me")}</strong> ${I18n.t("to finish signing in.")}`;
+                ? I18n.t('Open FreeDrive on your phone and tap {0} to approve sign-in to {1}.', { 0: confirmLabel, 1: `<strong>${Components.escapeHtml(I18n.device(deviceName))}</strong>` })
+                : I18n.t('Open FreeDrive on your phone and tap {0} to finish signing in.', { 0: confirmLabel });
         }
         clearFormError('login-approval-error');
         scheduleApprovalPoll();

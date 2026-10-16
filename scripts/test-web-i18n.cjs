@@ -213,3 +213,39 @@ test('authored translation keys have Chinese entries and icon names stay intact'
     }
     assert.deepEqual([...missing], []);
 });
+
+test('device names, enum labels and prefixed server errors are translated without touching user data', async () => {
+    const { i18n } = await environment();
+    assert.equal(i18n.device('Chrome on Linux'), 'Linux 上的 Chrome');
+    assert.equal(i18n.device('Browser on Unknown OS'), '未知系统 上的 浏览器');
+    assert.equal(i18n.device('Desktop app'), '桌面应用');
+    assert.equal(i18n.device("Alice's Chrome on Linux"), "Alice's Chrome on Linux");
+    for (const [value, expected] of [['guest', '访客'], ['owner', '所有者'], ['success', '成功'], ['failed', '失败'], ['copy', '复制'], ['cancelled', '已取消']]) {
+        assert.equal(i18n.label(value), expected, value);
+    }
+    assert.equal(i18n.error('failed to send email: smtp server does not support STARTTLS'), '发送邮件失败：SMTP 服务器不支持 STARTTLS');
+    assert.equal(i18n.error('failed to send email: dial tcp 10.0.0.1:25: i/o timeout'), '发送邮件失败：dial tcp 10.0.0.1:25: i/o timeout');
+    assert.equal(i18n.error('rate limit exceeded'), '请求过于频繁，请稍后再试');
+});
+
+test('English keeps device names and labels as they were', async () => {
+    const { i18n } = await environment('en');
+    assert.equal(i18n.device('Chrome on Linux'), 'Chrome on Linux');
+    assert.equal(i18n.label('guest'), 'guest');
+    assert.equal(i18n.error('rate limit exceeded'), 'rate limit exceeded');
+});
+
+test('notifications are translated when rendered and keep English text for icon detection', async () => {
+    for (const language of ['zh-CN', 'en']) {
+        const e = await environment(language);
+        e.load('js/filemanager.js', 'notificationText, notifIconType');
+        const { notificationText, notifIconType } = vm.runInContext('FileManager.__test', e.context);
+        const keyed = { text: 'File uploaded successfully', i18n: { key: 'File uploaded successfully', values: {} } };
+        assert.equal(notificationText(keyed), language === 'en' ? 'File uploaded successfully' : '文件上传成功');
+        assert.equal(notifIconType(keyed.text), 'upload');
+        const server = { text: 'failed_login — Admin', action: 'failed_login', target_name: 'Admin', target_type: 'user' };
+        assert.equal(notificationText(server), language === 'en' ? 'failed_login — Admin' : '登录失败 — Admin');
+        assert.equal(notificationText({ ...server, target_name: '' }), language === 'en' ? 'failed_login — Admin' : '登录失败 — 用户');
+        assert.equal(notificationText({ text: 'Legacy text' }), 'Legacy text');
+    }
+});

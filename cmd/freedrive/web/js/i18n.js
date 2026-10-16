@@ -72,18 +72,29 @@ const I18n = (() => {
         }
         // These known API messages append technical details after a fixed prefix.
         for (const prefix of ['failed to send email: ', 'failed to create backup: ', 'registration failed: ', 'wipe failed: ']) {
-            if (message.startsWith(prefix)) return t(prefix) + message.slice(prefix.length);
+            if (message.startsWith(prefix)) return t(prefix) + error(message.slice(prefix.length));
         }
         if (message.startsWith('quota exceeded:')) return t('quota exceeded') + '：' + message.slice('quota exceeded:'.length).trim();
         return message;
     }
 
+    // Server-generated device names ("Chrome on Linux", "Desktop app"); custom names are kept.
+    function device(value) {
+        const name = String(value ?? '');
+        if (language === 'en') return name;
+        if (name === 'Desktop app' || name === 'Mobile app') return t(name);
+        const match = /^(Browser|Edge|Chrome|Firefox|Safari|Opera) on (Unknown OS|Windows|macOS|Android|iOS|Linux)$/.exec(name);
+        if (!match) return name;
+        return t('{0} on {1}', { 0: t(match[1]), 1: t(match[2]) });
+    }
+
     function label(value, english = value) {
         const labels = {
-            all: 'All', viewer: 'Viewer', commenter: 'Commenter', editor: 'Editor', admin: 'Admin', user: 'User',
+            all: 'All', viewer: 'Viewer', commenter: 'Commenter', editor: 'Editor', owner: 'Owner', admin: 'Admin', user: 'User', guest: 'Guest',
             active: 'Active', suspended: 'Suspended', open: 'open', invite: 'Invite-only', closed: 'closed',
             light: 'light', dark: 'dark', system: 'system', daily: 'daily', weekly: 'weekly', monthly: 'monthly',
-            pending: 'pending', approved: 'approved', rejected: 'rejected',
+            pending: 'pending', approved: 'approved', rejected: 'rejected', cancelled: 'Cancelled',
+            success: 'Success', failed: 'Failed', file: 'File', folder: 'Folder', never: 'Never',
             login: 'Login', failed_login: 'Failed login', upload: 'File upload', download: 'Download',
             delete: 'Delete', restore: 'Restore', create: 'create', rename: 'Rename', move: 'Move',
             copy: 'Copy', comment: 'Comment', unshare: 'unshare',
@@ -94,5 +105,5 @@ const I18n = (() => {
         return t(labels[key] || key);
     }
 
-    return { t, error, init, apply, resolve, normalize, relative, label, languages, get language() { return language; } };
+    return { t, error, init, apply, resolve, normalize, relative, label, device, languages, get language() { return language; } };
 })();

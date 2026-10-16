@@ -346,7 +346,7 @@ const FileManager = (() => {
 
     function currentUserLabel() {
         const u = getCurrentUser();
-        return u.username || u.email || 'Me';
+        return u.username || u.email || I18n.t("Me");
     }
 
     function itemOwner(item) {
@@ -3201,7 +3201,7 @@ const FileManager = (() => {
                 if (shareTarget.type === 'folder') payload.folder_id = shareTarget.data.id;
                 else payload.file_id = shareTarget.data.id;
                 await API.shares.createUserShare(payload);
-                createNotification(I18n.t("{0} shared a file with you: {1}", { 0: currentUserLabel(), 1: shareTarget.data.name }), now, false, d.name || d.email);
+                createNotification({ key: "{0} shared a file with you: {1}", values: { 0: currentUserLabel(), 1: shareTarget.data.name } }, now, false, d.name || d.email);
             }
 
             addFileActivity(shareTarget.data.id, 'shared', shareTarget.data.name, now);
@@ -3217,10 +3217,17 @@ const FileManager = (() => {
         }
     }
 
-    function createNotification(text, createdAt = new Date().toISOString(), read = false, actor = '') {
+    // message is plain text or { key, values }; keyed messages are translated when rendered,
+    // and the English text is kept for icon detection and older readers.
+    function createNotification(message, createdAt = new Date().toISOString(), read = false, actor = '') {
+        const keyed = message && typeof message === 'object';
+        const text = keyed
+            ? message.key.replace(/\{(\d+)\}/g, (match, id) => message.values?.[id] == null ? match : String(message.values[id]))
+            : message;
         meta.notifications.unshift({
             id: Components.uuid(),
             text,
+            ...(keyed ? { i18n: { key: message.key, values: message.values || {} } } : {}),
             created_at: createdAt,
             read,
             actor,
@@ -3273,6 +3280,7 @@ const FileManager = (() => {
                 meta.notifications.push({
                     id,
                     text,
+                    ...(log.details ? {} : { action: log.action, target_name: log.target_name || '', target_type: log.target_type || '' }),
                     created_at: log.created_at || new Date().toISOString(),
                     read: false,
                     actor: log.username || '',
@@ -3288,6 +3296,16 @@ const FileManager = (() => {
         } catch {
             // keep local notifications if activity fetch fails
         }
+    }
+
+    function notificationText(n) {
+        if (n.i18n?.key) return I18n.t(n.i18n.key, n.i18n.values);
+        if (n.action && I18n.language !== 'en') {
+            const typeLabels = { file: 'File', folder: 'Folder', user: 'User' };
+            const target = n.target_name || I18n.t(typeLabels[n.target_type] || 'item');
+            return `${I18n.label(n.action)} — ${target}`;
+        }
+        return n.text;
     }
 
     function notifIconType(text) {
@@ -3350,12 +3368,13 @@ const FileManager = (() => {
 
             items.forEach((n) => {
                 const type = notifIconType(n.text);
+                const text = notificationText(n);
                 const row = document.createElement('div');
                 row.className = `notification-item ${n.read ? '' : 'unread'}`;
                 row.innerHTML = `
                     <div class="notif-icon-wrap ${type}">${notifIcons[type]}</div>
                     <div class="notification-body">
-                        ${esc(n.text)}
+                        ${esc(text)}
                         <div class="notification-time">${Components.formatDate(n.created_at)}</div>
                     </div>
                     ${n.read ? '' : '<span class="notif-unread-dot"></span>'}
@@ -4837,7 +4856,7 @@ const FileManager = (() => {
             }
         }
         addFileActivity(result.id, 'uploaded', result.name);
-        createNotification(I18n.t("File uploaded successfully"), new Date().toISOString(), true, currentUserLabel());
+        createNotification({ key: "File uploaded successfully" }, new Date().toISOString(), true, currentUserLabel());
         return result;
     }
 
@@ -4888,7 +4907,7 @@ const FileManager = (() => {
                 await API.files.update(file.id, { name: nameToUse });
             }
             addFileActivity(file.id, 'edited', file.name);
-            createNotification(I18n.t("{0} edited {1}", { 0: currentUserLabel(), 1: nameToUse }), new Date().toISOString(), true, currentUserLabel());
+            createNotification({ key: "{0} edited {1}", values: { 0: currentUserLabel(), 1: nameToUse } }, new Date().toISOString(), true, currentUserLabel());
             return true;
         } catch (err) {
             Components.toast(I18n.t("Save failed: {0}", { 0: I18n.error(err.message) }), 'error');
@@ -7087,7 +7106,7 @@ const FileManager = (() => {
                 const last = Number(localStorage.getItem(key) || 0);
                 const now = Date.now();
                 if (!last || (now - last) > (60 * 60 * 1000)) {
-                    createNotification(I18n.t("Storage is {0}% full", { 0: Math.round(pct) }), new Date().toISOString(), false, I18n.t("System"));
+                    createNotification({ key: "Storage is {0}% full", values: { 0: Math.round(pct) } }, new Date().toISOString(), false, I18n.t("System"));
                     localStorage.setItem(key, String(now));
                 }
             }
@@ -7163,7 +7182,7 @@ const FileManager = (() => {
 
     function afterUpload(result, file) {
         addFileActivity(result.id, 'uploaded', result.name);
-        createNotification(I18n.t("File uploaded successfully"), new Date().toISOString(), false, currentUserLabel());
+        createNotification({ key: "File uploaded successfully" }, new Date().toISOString(), false, currentUserLabel());
     }
 
     return {
