@@ -105,5 +105,6 @@ const I18n = (() => {
         return t(labels[key] || key);
     }
 
-    return { t, error, init, apply, resolve, normalize, relative, label, device, languages, get language() { return language; } };
+    // Sorting locale: undefined keeps the browser default for English; Chinese sorts by pinyin.
+    return { t, error, init, apply, resolve, normalize, relative, label, device, languages, get language() { return language; }, get collation() { return language === 'en' ? undefined : language; } };
 })();

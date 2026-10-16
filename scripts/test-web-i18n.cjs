@@ -260,3 +260,10 @@ test('public share downloads keep Chinese and quoted file names', () => {
     assert.equal(dispositionFilename("attachment; filename*=utf-8''%E0%A4%A"), '');
     assert.equal(dispositionFilename(''), '');
 });
+
+test('Chinese sites sort names by pinyin; English keeps the browser default', async () => {
+    const zh = (await environment()).i18n;
+    assert.equal(zh.collation, 'zh-CN');
+    assert.deepEqual(['张', '安', '李', '王', '波'].sort((a, b) => a.localeCompare(b, zh.collation)), ['安', '波', '李', '王', '张']);
+    assert.equal((await environment('en')).i18n.collation, undefined);
+});

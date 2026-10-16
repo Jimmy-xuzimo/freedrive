@@ -744,7 +744,7 @@ const AdminPanel = (() => {
             return true;
         });
 
-        list.sort((a, b) => String(a.username || a.email).localeCompare(String(b.username || b.email)));
+        list.sort((a, b) => String(a.username || a.email).localeCompare(String(b.username || b.email), I18n.collation));
 
         const pageMeta = paginate(list, state.usersPage, state.usersPerPage);
         state.usersPage = pageMeta.page;

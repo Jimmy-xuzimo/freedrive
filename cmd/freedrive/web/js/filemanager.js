@@ -1929,7 +1929,7 @@ const FileManager = (() => {
 
         const sortFn = (a, b) => {
             if (sortBy === 'name') {
-                return a.name.localeCompare(b.name) * factor;
+                return a.name.localeCompare(b.name, I18n.collation) * factor;
             }
             if (sortBy === 'owner') {
                 const ownerA = currentPage === 'shared-with'
@@ -1938,13 +1938,13 @@ const FileManager = (() => {
                 const ownerB = currentPage === 'shared-with'
                     ? (b.shared_by_name || b.shared_by_email || itemOwner(b))
                     : itemOwner(b);
-                return ownerA.localeCompare(ownerB) * factor;
+                return ownerA.localeCompare(ownerB, I18n.collation) * factor;
             }
             if (sortBy === 'size') {
                 if (currentPage === 'shared-with') {
                     const roleA = String(a.share_role || 'viewer');
                     const roleB = String(b.share_role || 'viewer');
-                    return roleA.localeCompare(roleB) * factor;
+                    return roleA.localeCompare(roleB, I18n.collation) * factor;
                 }
                 const av = Number(a.size || 0);
                 const bv = Number(b.size || 0);
@@ -1953,7 +1953,7 @@ const FileManager = (() => {
             if (sortBy === 'modified_by') {
                 const am = (a.last_modified_by || itemOwner(a)).toLowerCase();
                 const bm = (b.last_modified_by || itemOwner(b)).toLowerCase();
-                return am.localeCompare(bm) * factor;
+                return am.localeCompare(bm, I18n.collation) * factor;
             }
 
             const at = new Date((currentPage === 'shared-with')
