@@ -296,3 +296,15 @@ test('IME composition keys are recognised so Enter and Escape do not act mid-com
     assert.equal(components.isComposing({ key: 'Enter', keyCode: 13 }), false);
     assert.equal(components.isComposing(undefined), false);
 });
+
+test('word count treats each Chinese character as a word and keeps English counts', () => {
+    const source = fs.readFileSync(path.join(web, 'js/filemanager.js'), 'utf8');
+    const start = source.indexOf('    const WORD_TOKEN');
+    const end = source.indexOf('\n    }\n', source.indexOf('function countWords', start)) + 6;
+    const countWords = vm.runInNewContext(`${source.slice(start, end)}\ncountWords`);
+    const oldCount = (text) => (text.trim().match(/\S+/g) || []).length;
+    for (const text of ['', 'hello world', "  don't stop - now  ", 'a—b c', 'v1.2 x@y.z']) assert.equal(countWords(text), oldCount(text), text);
+    assert.equal(countWords('你好世界，欢迎使用 FreeDrive。'), 9);
+    assert.equal(countWords('季度报告2026'), 5);
+    assert.equal(countWords('「重要」：请查看'), 5);
+});

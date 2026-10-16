@@ -5859,8 +5859,15 @@ const FileManager = (() => {
         };
     }
 
+
+    // Each Han or kana character counts as a word (CJK text has no spaces); other text
+    // splits on whitespace as before. CJK punctuation separates words and is not counted.
+    const WORD_TOKEN = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]|[^\s\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\u3000-\u303f\uff01-\uff0f\uff1a-\uff20\uff3b-\uff40\uff5b-\uff65]+/gu;
+    function countWords(text) {
+        return (String(text || '').match(WORD_TOKEN) || []).length;
+    }
     function updateWordCount(text) {
-        const words = (text.trim().match(/\S+/g) || []).length;
+        const words = countWords(text);
         const chars = text.length;
         document.getElementById('text-count').textContent = I18n.t("{0} words · {1} chars", { 0: words, 1: chars.toLocaleString(I18n.language === 'en' ? undefined : I18n.language) });
     }
