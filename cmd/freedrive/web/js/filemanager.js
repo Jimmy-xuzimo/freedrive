@@ -4584,6 +4584,8 @@ const FileManager = (() => {
         return out;
     }
 
+    const ZIP_UTF8_FLAG = 0x0800;
+
     function createZipBlob(entries) {
         const encoder = new TextEncoder();
         const fileChunks = [];
@@ -4600,7 +4602,8 @@ const FileManager = (() => {
             const localView = new DataView(local.buffer);
             localView.setUint32(0, 0x04034b50, true);
             localView.setUint16(4, 20, true);
-            localView.setUint16(6, 0, true);
+            // Bit 11: names are UTF-8, so Chinese and other non-ASCII names extract intact.
+            localView.setUint16(6, ZIP_UTF8_FLAG, true);
             localView.setUint16(8, 0, true);
             localView.setUint16(10, time, true);
             localView.setUint16(12, date, true);
@@ -4617,9 +4620,10 @@ const FileManager = (() => {
             const central = new Uint8Array(46 + nameBytes.length);
             const centralView = new DataView(central.buffer);
             centralView.setUint32(0, 0x02014b50, true);
-            centralView.setUint16(4, 20, true);
+            // Made by Unix (3): unzip would otherwise re-decode FAT-host names as an OEM code page.
+            centralView.setUint16(4, (3 << 8) | 20, true);
             centralView.setUint16(6, 20, true);
-            centralView.setUint16(8, 0, true);
+            centralView.setUint16(8, ZIP_UTF8_FLAG, true);
             centralView.setUint16(10, 0, true);
             centralView.setUint16(12, time, true);
             centralView.setUint16(14, date, true);
@@ -4631,7 +4635,8 @@ const FileManager = (() => {
             centralView.setUint16(32, 0, true);
             centralView.setUint16(34, 0, true);
             centralView.setUint16(36, 0, true);
-            centralView.setUint32(38, entry.path.endsWith('/') ? 0x10 : 0, true);
+            // Unix mode in the high word (0755 dirs, 0644 files); DOS directory bit kept for Windows.
+            centralView.setUint32(38, entry.path.endsWith('/') ? ((0o40755 << 16) | 0x10) >>> 0 : (0o100644 << 16) >>> 0, true);
             centralView.setUint32(42, offset, true);
             central.set(nameBytes, 46);
             centralChunks.push(central);

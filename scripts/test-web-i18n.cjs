@@ -267,3 +267,23 @@ test('Chinese sites sort names by pinyin; English keeps the browser default', as
     assert.deepEqual(['张', '安', '李', '王', '波'].sort((a, b) => a.localeCompare(b, zh.collation)), ['安', '波', '李', '王', '张']);
     assert.equal((await environment('en')).i18n.collation, undefined);
 });
+
+test('ZIP downloads mark entry names as UTF-8 so Chinese names extract intact', async () => {
+    const source = fs.readFileSync(path.join(web, 'js/filemanager.js'), 'utf8');
+    const grab = (start, end) => { const i = source.indexOf(start); return source.slice(i, source.indexOf(end, i) + end.length); };
+    const fn = (name) => { const i = source.indexOf(`    function ${name}(`); let depth = 0; for (let k = source.indexOf('{', i); k < source.length; k++) { if (source[k] === '{') depth++; else if (source[k] === '}' && !--depth) return source.slice(i, k + 1); } };
+    const code = [grab('    const zipCrcTable', '})();'), grab('    const ZIP_UTF8_FLAG', ';'), ...['crc32', 'dosDateTime', 'concatUint8', 'createZipBlob'].map(fn)].join('\n');
+    const createZipBlob = vm.runInNewContext(`${code}\ncreateZipBlob`, { TextEncoder, Blob, Uint8Array, DataView, Date });
+    const bytes = new Uint8Array(await createZipBlob([
+        { path: '季度 报告.txt', data: new TextEncoder().encode('内容'), modifiedAt: new Date() },
+        { path: '文件夹/', data: new Uint8Array(0), modifiedAt: new Date() },
+    ]).arrayBuffer());
+    const view = new DataView(bytes.buffer);
+    assert.equal(view.getUint16(6, true) & 0x0800, 0x0800);
+    const nameLength = view.getUint16(26, true);
+    assert.equal(new TextDecoder().decode(bytes.slice(30, 30 + nameLength)), '季度 报告.txt');
+    const central = bytes.findIndex((_, i) => view.getUint32(i, true) === 0x02014b50);
+    assert.equal(view.getUint16(central + 4, true) >> 8, 3, 'made by Unix');
+    assert.equal(view.getUint16(central + 8, true) & 0x0800, 0x0800);
+    assert.equal(view.getUint32(central + 38, true) >>> 16, 0o100644);
+});
