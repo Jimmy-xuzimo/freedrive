@@ -75,6 +75,16 @@ const I18n = (() => {
             if (message.startsWith(prefix)) return t(prefix) + error(message.slice(prefix.length));
         }
         if (message.startsWith('quota exceeded:')) return t('quota exceeded') + '：' + message.slice('quota exceeded:'.length).trim();
+        // JSON.parse messages differ per browser; keep only the position when one is given.
+        if (/JSON/.test(message) && /Unexpected|Expected|not valid|Bad control|Unterminated/i.test(message)) {
+            const lineColumn = /line (\d+) column (\d+)/i.exec(message);
+            if (lineColumn) return t('JSON syntax error (line {0}, column {1})', { 0: lineColumn[1], 1: lineColumn[2] });
+            const position = /position (\d+)/i.exec(message);
+            return position ? t('JSON syntax error at position {0}', { 0: position[1] }) : t('JSON syntax error');
+        }
+        // Go/OS error details end in a fixed phrase ("mkdir /path: permission denied"); keep the path.
+        const systemError = /^(.*?)(?::\s*|\s+)(permission denied|no such file or directory|file exists|no space left on device|read-only file system|connection refused|connection reset by peer|i\/o timeout|network is unreachable|no such host|context deadline exceeded|EOF|broken pipe|too many open files|operation not permitted)$/i.exec(message);
+        if (systemError) return (systemError[1] ? systemError[1] + '：' : '') + t(systemError[2].toLowerCase());
         return message;
     }
 

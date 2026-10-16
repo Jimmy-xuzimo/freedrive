@@ -125,6 +125,13 @@ const AdminPanel = (() => {
         return Components.escapeHtml(value || '');
     }
 
+    // English keeps the original codes; other UI languages name every option in that language.
+    const LANGUAGE_OPTION_NAMES = { en: 'English', 'zh-CN': 'Simplified Chinese', az: 'Azerbaijani', tr: 'Turkish', de: 'German' };
+    function languageOptionLabel(code) {
+        if (I18n.language === 'en') return I18n.languages[code] || code.toUpperCase();
+        return code === 'zh-CN' ? I18n.languages[code] : I18n.t(LANGUAGE_OPTION_NAMES[code] || code);
+    }
+
     function formatPurgeTrashResult(res, prefix = I18n.t("Purged")) {
         const files = res?.removed_files || 0;
         const folders = res?.removed_folders || 0;
@@ -1505,7 +1512,7 @@ const AdminPanel = (() => {
                 <div class="admin-form-group">
                     <label>${I18n.t("Default language")}</label>
                     <select class="admin-input" data-setting="general.language">
-                        ${['en', 'zh-CN', 'az', 'tr', 'de'].map((x) => `<option value="${x}" ${(I18n.normalize(g.language) || g.language || 'en') === x ? 'selected' : ''}>${I18n.languages[x] || x.toUpperCase()}</option>`).join('')}
+                        ${['en', 'zh-CN', 'az', 'tr', 'de'].map((x) => `<option value="${x}" ${(I18n.normalize(g.language) || g.language || 'en') === x ? 'selected' : ''}>${languageOptionLabel(x)}</option>`).join('')}
                     </select>
                 </div>
                 <div class="admin-form-group">
@@ -2557,8 +2564,13 @@ const AdminPanel = (() => {
 
                 if (action === 'export-activity-csv') {
                     const rows = filteredActivityList();
-                    const csv = ['timestamp,user,action,target,ip,device,status']
-                        .concat(rows.map((r) => [r.created_at, r.username, r.action, r.target_name, r.ip, r.device, r.status].map((x) => `"${String(x || '').replace(/"/g, '""')}"`).join(',')))
+                    const quote = (x) => `"${String(x || '').replace(/"/g, '""')}"`;
+                    // English keeps the machine-friendly header; other languages get readable columns.
+                    const header = I18n.language === 'en'
+                        ? 'timestamp,user,action,target,ip,device,status'
+                        : ['Time', 'User', 'Action', 'Target', 'IP Address', 'Device', 'Status'].map((h) => quote(I18n.t(h))).join(',');
+                    const csv = [header]
+                        .concat(rows.map((r) => [r.created_at, r.username, I18n.label(r.action), r.target_name, r.ip, r.device, I18n.label(r.status)].map(quote).join(',')))
                         .join('\n');
                     downloadTextFile(Components.csvForExcel(csv), `activity-${Date.now()}.csv`, 'text/csv');
                     return;

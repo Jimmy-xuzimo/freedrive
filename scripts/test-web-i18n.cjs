@@ -224,7 +224,7 @@ test('device names, enum labels and prefixed server errors are translated withou
         assert.equal(i18n.label(value), expected, value);
     }
     assert.equal(i18n.error('failed to send email: smtp server does not support STARTTLS'), '发送邮件失败：SMTP 服务器不支持 STARTTLS');
-    assert.equal(i18n.error('failed to send email: dial tcp 10.0.0.1:25: i/o timeout'), '发送邮件失败：dial tcp 10.0.0.1:25: i/o timeout');
+    assert.equal(i18n.error('failed to send email: dial tcp 10.0.0.1:25: i/o timeout'), '发送邮件失败：dial tcp 10.0.0.1:25：连接超时');
     assert.equal(i18n.error('rate limit exceeded'), '请求过于频繁，请稍后再试');
 });
 
@@ -322,4 +322,23 @@ test('text files decode as UTF-8, UTF-16 or (on Chinese sites) GBK, and Chinese 
     assert.equal(components.csvForExcel('a,b\n1,2'), 'a,b\n1,2');
     assert.equal(components.csvForExcel('名称,大小'), '﻿名称,大小');
     assert.equal(components.csvForExcel('﻿名称'), '﻿名称');
+});
+
+test('system error details are translated while paths and hosts are kept', async () => {
+    const { i18n } = await environment();
+    assert.equal(i18n.error('failed to create backup: mkdir /var/lib/freedrive: permission denied'), '创建备份失败：mkdir /var/lib/freedrive：权限不足');
+    assert.equal(i18n.error('failed to send email: dial tcp 10.0.0.1:25: i/o timeout'), '发送邮件失败：dial tcp 10.0.0.1:25：连接超时');
+    assert.equal(i18n.error('dial tcp: lookup smtp.example.com: no such host'), 'dial tcp: lookup smtp.example.com：找不到主机');
+    assert.equal(i18n.error('something else entirely'), 'something else entirely');
+    const en = (await environment('en')).i18n;
+    assert.equal(en.error('mkdir /x: permission denied'), 'mkdir /x: permission denied');
+});
+
+test('JSON and browser network errors are shown in Chinese', async () => {
+    const { i18n } = await environment();
+    for (const source of ['abc', '{a:1}', '[1,]']) {
+        try { JSON.parse(source); } catch (err) { assert.match(i18n.error(err.message), /^JSON 语法错误/); }
+    }
+    assert.equal(i18n.error('Failed to fetch'), '网络连接失败，请检查网络后重试');
+    assert.equal(i18n.error('signal timed out'), '请求超时');
 });
